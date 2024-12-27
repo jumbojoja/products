@@ -1,6 +1,7 @@
 import entities.Book;
 import entities.Borrow;
 import entities.Card;
+import entities.User;
 import queries.ApiResult;
 import queries.BookQueryConditions;
 
@@ -169,6 +170,10 @@ public interface LibraryManagementSystem {
     ApiResult ModifyCard(Card card);
 
     ApiResult showBooks();
+
+    ApiResult adduser(String user_name, String password, String email);
+
+    ApiResult checkuser(String user_name, String password, String email);
 
     /**
      * reset database to its initial state.

@@ -24,8 +24,8 @@
             </el-input>
 
             <span style="margin-left: 40px;">
-                <el-button type="primary" @click="newBookVisable = true">登录</el-button>
-                <el-button type="primary" @click="newBookVisable = true">注册</el-button>
+                <el-button type="primary" @click="loginVisable = true">登录</el-button>
+                <el-button type="primary" @click="newUserVisable = true">注册</el-button>
             </span>
         </div>    
 
@@ -103,6 +103,54 @@
                     <el-button @click="newBookVisable = false">取消</el-button>
                     <el-button type="primary" @click="ConfirmNewBook"
                         :disabled="newBookInfo.category.length === 0 || newBookInfo.title.length === 0">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 新建用户对话框 -->
+        <el-dialog v-model="newUserVisable" title="用户注册" width="30%" align-center>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                用户名：
+                <el-input v-model="newUserInfo.user_name" style="width: 12.5vw;" clearable />
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                密码：
+                <el-input v-model="newUserInfo.password" style="width: 12.5vw;" clearable />
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                电子邮件：
+                <el-input v-model="newUserInfo.email" style="width: 12.5vw;" clearable />
+            </div>
+
+            <template #footer>
+                <span>
+                    <el-button @click="newUserVisable = false">取消</el-button>
+                    <el-button type="primary" @click="adduser"
+                        :disabled="newUserInfo.user_name.length === 0 || newUserInfo.password.length <= 8 || newUserInfo.email.length === 0">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 用户登录对话框 -->
+        <el-dialog v-model="loginVisable" title="用户登录" width="30%" align-center>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                用户名：
+                <el-input v-model="newUserInfo.user_name" style="width: 12.5vw;" clearable />
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                密码：
+                <el-input v-model="newUserInfo.password" style="width: 12.5vw;" clearable />
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                电子邮件：
+                <el-input v-model="newUserInfo.email" style="width: 12.5vw;" clearable />
+            </div>
+
+            <template #footer>
+                <span>
+                    <el-button @click="newUserVisable = false">取消</el-button>
+                    <el-button type="primary" @click="checkuser"
+                        :disabled="newUserInfo.user_name.length === 0 || newUserInfo.password.length <= 8 || newUserInfo.email.length === 0">确定</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -271,6 +319,8 @@ export default {
             borrowBookVisable: false, // 借书对话框可见性
             returnBookVisable: false, // 还书对话框可见性
             removeBookVisable: false, // 删除书对话框可见性
+            newUserVisable: false, // 新建用户对话框可见性
+            loginVisable: false, // 用户登录对话框可见性
             newBookInfo: { // 待新建书信息
                 category: '',
                 title: '',
@@ -279,6 +329,17 @@ export default {
                 author: '',
                 price: '',
                 stock: ''
+            },
+            newUserInfo: { // 待新建用户信息
+                user_name: '',
+                password: '',
+                email: '',
+            },
+            loginInfo: { // 登录用户信息
+                user_id: '',
+                user_name: '',
+                password: '',
+                email: '',
             },
             incBookInfo: {
                 book_id: '',
@@ -373,6 +434,44 @@ export default {
                     }
                     this.newBookVisable = false // 将对话框设置为不可见
                     this.QueryBooks() // 重新查询书以刷新页面
+                })
+        },
+        adduser() {
+            // 发出POST请求
+            axios.post("/adduser",
+                { // 请求体
+                    user_name: this.newUserInfo.user_name,
+                    password: this.newUserInfo.password,
+                    email: this.newUserInfo.email
+                })
+                .then(response => {
+                    if (response.data == "1") {
+                        ElMessage.success("注册成功") // 显示消息提醒
+                    } else {
+                        ElMessage.info("注册失败")
+                    }
+                    this.newUserVisable = false // 将对话框设置为不可见
+                })
+        },
+        checkuser() {
+            // 发出POST请求
+            axios.post("/checkuser",
+                { // 请求体
+                    user_name: this.newUserInfo.user_name,
+                    password: this.newUserInfo.password,
+                    email: this.newUserInfo.email
+                })
+                .then(response => {
+                    if (response.data == "0") {
+                        ElMessage.info("登录失败") // 显示消息提醒
+                    } else {
+                        ElMessage.success("登录成功")
+                        this.loginInfo.user_id = response.userId,
+                        this.loginInfo.user_name = response.userName,
+                        this.loginInfo.password = response.password,
+                        this.loginInfo.email = response.email
+                    }
+                    this.loginVisable = false // 将对话框设置为不可见
                 })
         },
         ConfirmIncBook() {

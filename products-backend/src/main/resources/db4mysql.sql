@@ -1,6 +1,7 @@
 drop table if exists `borrow`;
 drop table if exists `card`;
 drop table if exists `book`;
+drop table if exists `user`;
 
 create table `book` (
     `book_id` int not null auto_increment,
@@ -13,6 +14,15 @@ create table `book` (
     `stock` int not null default 0,
     primary key (`book_id`),
     unique (`category`, `press`, `author`, `title`, `publish_year`)
+) engine=innodb charset=utf8mb4;
+
+create table `user` (
+    `user_id` int not null auto_increment,
+    `user_name` varchar(63) not null,
+    `password` varchar(63) not null,
+    `email` varchar(63) not null,
+    primary key (`user_id`),
+    unique (`user_name`)
 ) engine=innodb charset=utf8mb4;
 
 create table `card` (

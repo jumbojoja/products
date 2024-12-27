@@ -1,6 +1,7 @@
 import entities.Book;
 import entities.Borrow;
 import entities.Card;
+import entities.User;
 import queries.*;
 import utils.DBInitializer;
 import utils.DatabaseConnector;
@@ -17,6 +18,85 @@ public class LibraryManagementSystemImpl implements LibraryManagementSystem {
 
     public LibraryManagementSystemImpl(DatabaseConnector connector) {
         this.connector = connector;
+    }
+
+    @Override
+    public ApiResult adduser(String user_name, String password, String email) {
+        Connection conn = connector.getConn();
+        try {
+            conn.setAutoCommit(false);
+            // avoid injection
+            String sql_select = "SELECT * FROM user WHERE user_name = ?";
+            PreparedStatement statement = conn.prepareStatement(sql_select);
+            statement.setString(1, user_name);
+            ResultSet resultSet = statement.executeQuery();
+            // check if the user already exists
+            if (resultSet.next()) {
+                return new ApiResult(false, "already a same user");
+            }
+            String sql_insert = "INSERT INTO user(user_name,password,email) VALUES(?,?,?)";
+            // insert the book and get its id
+            PreparedStatement insertStmt = conn.prepareStatement(sql_insert, Statement.RETURN_GENERATED_KEYS);
+            insertStmt.setString(1, user_name);
+            insertStmt.setString(2, password);
+            insertStmt.setString(3, email);
+            int rows = insertStmt.executeUpdate();
+            if (rows == 1) {
+                commit(conn);
+                return new ApiResult(true, "register success");
+            } else {
+                conn.rollback();
+                return new ApiResult(false, "register fail");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            rollback(conn);
+            return new ApiResult(false, "register rollback fail");
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public ApiResult checkuser(String user_name, String password, String email) {
+        Connection conn = connector.getConn();
+        try {
+            conn.setAutoCommit(false);
+            // avoid injection
+            String sql_select = "SELECT * FROM user WHERE user_name = ? AND password = ?";
+            PreparedStatement statement = conn.prepareStatement(sql_select);
+            statement.setString(1, user_name);
+            statement.setString(2, password);
+            ResultSet resultSet = statement.executeQuery();
+            // check if the user exists
+            if (resultSet.next()) {
+                int user_id = resultSet.getInt("user_id");
+                User user = new User();
+                user.setUserId(user_id);
+                user.setUserName(resultSet.getString("user_name"));
+                user.setPassword(resultSet.getString("password"));
+                user.setEmail(resultSet.getString("email"));
+                commit(conn);
+                return new ApiResult(true, "login success", user);
+            }else {
+                conn.rollback();
+                return new ApiResult(false, "login fail");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            rollback(conn);
+            return new ApiResult(false, "login rollback fail");
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
