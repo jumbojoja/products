@@ -2,6 +2,7 @@ import entities.Book;
 import entities.Borrow;
 import entities.Card;
 import entities.User;
+import entities.Goods;
 import queries.ApiResult;
 import queries.BookQueryConditions;
 
@@ -174,6 +175,10 @@ public interface LibraryManagementSystem {
     ApiResult adduser(String user_name, String password, String email);
 
     ApiResult checkuser(String user_name, String password, String email);
+
+    ApiResult addgoods(int sku_id, String goods_name, String goods_link, String img_url, double price, String platform);
+
+    /* ApiResult modifygoods(int goods_id, int sku_id, String goods_name, String goods_link, String img_url, double price, String platform); */
 
     /**
      * reset database to its initial state.

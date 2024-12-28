@@ -6,7 +6,7 @@
                 style=" width: 15vw;min-width: 150px; margin-left: 30px; margin-right: 30px; float: right; ;"
                 clearable /> -->
             <el-input
-            v-model="toSearch"
+            v-model="goodsToSearch"
             style=" width: 1000px; margin-left: 200px; margin-right: 120px;"
             placeholder="查询商品"
             class="input-with-select"
@@ -19,7 +19,7 @@
                     </el-select>
                 </template>
                 <template #append>
-                    <el-button :icon="Search" />
+                    <el-button :icon="Search" @click="SearchGoods"></el-button>
                 </template>
             </el-input>
 
@@ -33,14 +33,14 @@
         <el-table v-if="isShow" :data="fitlerTableData" height="600"
             :default-sort="{ prop: 'price', order: 'ascending' }" :table-layout="'auto'"
             style="width: 100%; margin-left: 50px; margin-top: 30px; margin-right: 50px; max-width: 92vw;" highlight-current-row>
-            <el-table-column label="照片" prop="imgurl">
+            <el-table-column label="照片" prop="img_url">
                 <template v-slot="scope">
-                    <img :src="scope.row.imgurl" alt="图片" width="90" height="90">
+                    <img :src="scope.row.img_url" alt="图片" width="90" height="90">
                 </template>
             </el-table-column>
-            <el-table-column label="商品链接" prop="link, name">
+            <el-table-column label="商品链接" prop="goods_link, goods_name">
                 <template v-slot="scope">
-                    <el-link :href="scope.row.link" target="_blank" class="buttonText">{{scope.row.name}}</el-link>
+                    <el-link :href="scope.row.goods_link" target="_blank" class="buttonText">{{scope.row.goods_name}}</el-link>
                 </template>
             </el-table-column>
             <el-table-column prop="platform" label="平台" sortable />
@@ -280,33 +280,23 @@ export default {
         return {
             isShow: true, // 图书表格展示状态
             tableData: [{ // 列表项
-                book_id: 1,
-                category: "Philosophy",
-                title: "Database System Concepts",
-                press: "Press-H",
-                publish_year: 2010,
-                author: "DaDa",
+                goods_id: 1,
                 price: 11999.0,
-                stock: 1,
-                imgurl: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
-                link: 'https://element-plus.org',
-                name: 'Apple/苹果 iPhone 16 Pro Max（A3297）512GB 原色钛金属 支持移动联通电信5G 双卡双待手机',
+                img_url: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
+                goods_link: 'https://element-plus.org',
+                goods_name: 'Apple/苹果 iPhone 16 Pro Max（A3297）512GB 原色钛金属 支持移动联通电信5G 双卡双待手机',
                 platform: '京东商城'
             }, {
-                book_id: 2,
-                category: "Phi",
-                title: "Database System",
-                press: "Press-I",
-                publish_year: 2012,
-                author: "DaDa",
+                goods_id: 2,
                 price: 499.0,
-                stock: 6,
-                imgurl: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
-                link: 'https://element-plus.org',
-                name: '小米（MI）Redmi 12C Helio G85 性能芯 5000万高清双摄 5000mAh长续航 4GB+128GB 深海蓝 智能手机小米红米',
+                img_url: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
+                goods_link: 'https://element-plus.org',
+                goods_name: '小米（MI）Redmi 12C Helio G85 性能芯 5000万高清双摄 5000mAh长续航 4GB+128GB 深海蓝 智能手机小米红米',
                 platform: '天猫'
             }
             ],
+            goodsToSearch: '', // 待搜索内容(对查询到的结果进行搜索)
+            goodsToSearchBase64: '', // 待搜索内容(base64)
             toSearch: '', // 待搜索内容(对查询到的结果进行搜索)
             toremove: '', // 待删除书籍
             Delete,
@@ -436,6 +426,23 @@ export default {
                     this.QueryBooks() // 重新查询书以刷新页面
                 })
         },
+        toBase64() {
+            this.goodsToSearchBase64 = EncodeURIComponent(this.goodsToSearch)
+        },
+        SearchGoods() {
+            this.tableData = [] // 清空列表
+            /* this.toBase64(); */
+            axios.post("/search",
+                { // 请求体
+                    goodsToSearch: this.goodsToSearch
+                })
+                .then(response => {
+                    let tableData = response.data // 接收响应负载
+                    tableData.forEach(goods => { // 对于每个借书证
+                        this.tableData.push(goods) // 将其加入到列表中
+                    })
+                })
+        },
         adduser() {
             // 发出POST请求
             axios.post("/adduser",
@@ -466,10 +473,11 @@ export default {
                         ElMessage.info("登录失败") // 显示消息提醒
                     } else {
                         ElMessage.success("登录成功")
-                        this.loginInfo.user_id = response.userId,
-                        this.loginInfo.user_name = response.userName,
-                        this.loginInfo.password = response.password,
-                        this.loginInfo.email = response.email
+                        this.loginInfo.user_id = response.data.userId,
+                        this.loginInfo.user_name = response.data.userName,
+                        this.loginInfo.password = response.data.password,
+                        this.loginInfo.email = response.data.email
+                        console.log(this.loginInfo)
                     }
                     this.loginVisable = false // 将对话框设置为不可见
                 })

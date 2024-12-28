@@ -2,6 +2,7 @@ import entities.Book;
 import entities.Borrow;
 import entities.Card;
 import entities.User;
+import entities.Goods;
 import queries.*;
 import utils.DBInitializer;
 import utils.DatabaseConnector;
@@ -90,6 +91,57 @@ public class LibraryManagementSystemImpl implements LibraryManagementSystem {
             e.printStackTrace();
             rollback(conn);
             return new ApiResult(false, "login rollback fail");
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public ApiResult addgoods(int sku_id, String goods_name, String goods_link, String img_url, double price, String platform) {
+        Connection conn = connector.getConn();
+        try {
+            conn.setAutoCommit(false);
+            // avoid injection
+            String sql_select = "SELECT * FROM goods WHERE sku_id = ? AND price = ?";
+            PreparedStatement statement = conn.prepareStatement(sql_select);
+            statement.setInt(1, sku_id);
+            statement.setDouble(2, price);
+            ResultSet resultSet = statement.executeQuery();
+            // check if the goods already exists
+            if (resultSet.next()) {
+                String sql_del = "DELETE FROM goods WHERE sku_id = ?";
+                PreparedStatement statement_del = conn.prepareStatement(sql_del);
+                statement_del.setInt(1, sku_id);
+                int ret = statement_del.executeUpdate();
+                if (ret == 1) {
+                    commit(conn);
+                }
+            }
+            String sql_insert = "INSERT INTO goods(sku_id,goods_name,goods_link,img_url,price,platform) VALUES(?,?,?,?,?,?)";
+            // insert the book and get its id
+            PreparedStatement insertStmt = conn.prepareStatement(sql_insert, Statement.RETURN_GENERATED_KEYS);
+            insertStmt.setInt(1, sku_id);
+            insertStmt.setString(2, goods_name);
+            insertStmt.setString(3, goods_link);
+            insertStmt.setString(4, img_url);
+            insertStmt.setDouble(5, price);
+            insertStmt.setString(6, platform);
+            int rows = insertStmt.executeUpdate();
+            if (rows == 1) {
+                commit(conn);
+                return new ApiResult(true, "add goods success");
+            } else {
+                conn.rollback();
+                return new ApiResult(false, "add goods fail");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            rollback(conn);
+            return new ApiResult(false, "register rollback fail");
         } finally {
             try {
                 conn.setAutoCommit(true);

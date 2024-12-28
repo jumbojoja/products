@@ -5,9 +5,13 @@ import java.util.Objects;
 import com.alibaba.fastjson.annotation.JSONField;
 
 public final class User {
+    @JSONField(name = "userId", ordinal = 1)
     private int user_id;
+    @JSONField(name = "userName", ordinal = 2)
     private String user_name;
+    @JSONField(name = "password", ordinal = 3)
     private String password;
+    @JSONField(name = "email", ordinal = 4)
     private String email;
 
     public User() {
