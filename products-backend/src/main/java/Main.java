@@ -4,9 +4,13 @@ import com.alibaba.fastjson.*;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import entities.*;
 import queries.ApiResult;
 import queries.CardList;
+import queries.GoodsResults;
 
 import com.sun.net.httpserver.*;
 import java.io.*;
@@ -23,6 +27,15 @@ import org.jsoup.nodes.Document;
 import java.net.URL;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+
+import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class Main {
 
@@ -123,7 +136,8 @@ public class Main {
             // 读取POST请求体
             InputStream requestBody = exchange.getRequestBody();
             // 用这个请求体（输入流）构造个buffered reader
-            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+            /* BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody)); */
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody, "UTF-8"));
             // 拼字符串的
             StringBuilder requestBodyBuilder = new StringBuilder();
             // 用来读的
@@ -135,31 +149,134 @@ public class Main {
         
             JSONObject jobj = JSON.parseObject(requestBodyBuilder.toString());
             String to_search = jobj.getString("goodsToSearch");
-            String url = "https://search.jd.com/Search?keyword=" + to_search;
-            /* String url = "https://search.jd.com/Search?keyword=%E9%A9%AC%E5%85%8B%E6%9D%AF"; */
+
+            // 京东
+
+            /* String url = "https://search.jd.com/Search?keyword=" + to_search;
             System.out.println(url);
 
             Map<String, String> cookies = new HashMap<String, String>();
             cookies.put("thor", "1DF144F5752806C2B375B090174A9A2D530A6B054C7DB431886D547C8BB71ABACADD6EE089D7290403DE1879116F9B2D382FD71DB60A2660B51D51FEF57BC57D6695DB494ECEC2F7C3FB124A1FE9975AB707CF1D529D36661976323F0591096AB92DA3D8C19103A0BB7584144357984DFC9062C731C54FC91C133F4ACC1CA4E0EBB690142CEB9D272CBF7545BA31F400CDF445C6EB84A7AC9D09BCCF53F555D0");
-            Document document = Jsoup.connect(url).cookies(cookies).get();
-            System.out.println(document);
+            Document document = Jsoup.connect(url).cookies(cookies).post();
+            Elements ul = document.getElementsByClass("gl-warp clearfix");
+            // 获取ul标签下的所有li标签
+            Elements liList = ul.select("li");
+            for (Element element : liList) {
+                System.out.println("------------------");
+                System.out.println(element);
+                System.out.println();
+            } */
+
+            // 淘宝
+
+            System.setProperty("webdriver.chrome.driver", "C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe");
+            System.setProperty("webdriver.chrome.whitelistedIps", "");
+
+            // 设置 Chrome 用户数据目录
+            String userDataDir = "E:\\chrome_userdata"; // 修改为你自己的用户数据目录路径
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("user-data-dir=" + userDataDir); // 指定用户数据目录，Chrome 会在这个目录下保存登录信息
+
+            WebDriver driver = new ChromeDriver(options);
+
+            List<Goods> Goods_list = new ArrayList<>();
+
+            try {
+                // 登录后访问商品页面（示例链接）
+                /* String targetUrl = "https://s.taobao.com/search?commend=all&ie=utf8&initiative_id=tbindexz_20170306&page=1&q=phone&tab=all"; */
+                String targetUrl = "https://s.taobao.com/search?commend=all&ie=utf8&initiative_id=tbindexz_20170306&page=1&q=" + to_search + "&tab=all";
+                driver.get(targetUrl);
+
+                driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+
+                /* // 给用户时间登录
+                System.out.println("请手动登录淘宝，登录后按回车键继续...");
+                
+                // 等待用户手动登录并按回车键继续
+                System.in.read();  // 阻塞程序，直到用户按下回车 */
+
+                // 获取页面 HTML
+                String pageSource = driver.getPageSource();
+
+                // 使用 Jsoup 解析 HTML
+                Document document = Jsoup.parse(pageSource);
+
+                Elements div = document.getElementsByClass("tbpc-row tbpc-row-start");
+
+                Elements DivList = div.select("div");
+                for (Element element : DivList) {
+                    Elements goods = element.select("[class*='search-content-col']");
+                    Element link = goods.select("a").first();
+                    if (link != null) {
+                        // href
+                        String href = link.attr("href");
+                        href = "https:" + href;
+                        /* System.out.println("------------------");  
+                        System.out.println(href); */
+
+                        // skuID
+                        String regex = "skuId=(\\d+)";  // 匹配 skuId= 后的数字部分
+                        Pattern pattern = Pattern.compile(regex);
+                        Matcher matcher = pattern.matcher(href);
+                        String skuId = "100";
+                        if (matcher.find()) {
+                            // 获取匹配的 skuId
+                            skuId = matcher.group(1);
+                            /* System.out.println("Extracted skuId: " + skuId); */
+                        } else {
+                            /* System.out.println("skuId not found in the URL."); */
+                        }
+
+                        // img_url
+                        /* Element imgElement = goods.select("[class*='mainPic--Ds3X7I8z']").first(); */
+                        Element imgElement = goods.select("img").first();
+                        String img_url = imgElement != null ? imgElement.attr("src") : "https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
+                        /* System.out.println(img_url); */
+
+                        // goods_name
+                        Element nameElement = goods.select("[class*='title--qJ7Xg_90']").first().select("span").first();
+                        String goods_name = nameElement != null ? nameElement.text() : "未找到";
+                        /* System.out.println(goods_name); */
+
+                        // price
+                        Element priceIntElement = goods.select("[class*='priceInt']").first();
+                        Element priceFloatElement = goods.select("[class*='priceFloat']").first();
+                        String priceInt = priceIntElement != null ? priceIntElement.text() : "1024";
+                        String priceFloat = priceFloatElement != null ? priceFloatElement.text() : ".00";
+                        String goodsprice = priceInt + priceFloat;
+                        double price = Double.parseDouble(goodsprice);
+                        /* System.out.println(price); */
+
+                        String platform = "淘宝";
+                        /* System.out.println(platform); */
+
+                        library.addgoods(skuId, goods_name, href, img_url, price, platform);
+                        // 此处并没有用到goods_id
+                        Goods agoods = new Goods(1, goods_name, href, img_url, price, platform, skuId);
+                        Goods_list.add(agoods);
+
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                driver.quit(); // 关闭浏览器
+            }
             
-            /* ApiResult result = library.checkuser(user_name, password, email);
-            String ret = JSON.toJSONString(result.payload); */
+            GoodsResults result = new GoodsResults(Goods_list);
+            String response = JSON.toJSONString(result);
+            JSONObject object = JSONObject.parseObject(response);
+            JSONArray jsarr = object.getJSONArray("results");
+            String ret = JSON.toJSONString(jsarr);
         
             // 响应头
-            exchange.getResponseHeaders().set("Content-Type", "text/plain");
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
             // 响应状态码200
             exchange.sendResponseHeaders(200, 0);
         
             // 剩下三个和GET一样
             OutputStream outputStream = exchange.getResponseBody();
-            /* if (result.ok == true) {
-                outputStream.write(ret.getBytes());
-            } else {
-                outputStream.write("0".getBytes());
-            } */
-            outputStream.write("1".getBytes());
+            outputStream.write(ret.getBytes("UTF-8"));
             outputStream.close();
         }
 

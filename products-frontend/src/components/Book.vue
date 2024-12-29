@@ -33,14 +33,14 @@
         <el-table v-if="isShow" :data="fitlerTableData" height="600"
             :default-sort="{ prop: 'price', order: 'ascending' }" :table-layout="'auto'"
             style="width: 100%; margin-left: 50px; margin-top: 30px; margin-right: 50px; max-width: 92vw;" highlight-current-row>
-            <el-table-column label="照片" prop="img_url">
+            <el-table-column label="照片" prop="imgUrl">
                 <template v-slot="scope">
-                    <img :src="scope.row.img_url" alt="图片" width="90" height="90">
+                    <img :src="scope.row.imgUrl" alt="图片" width="90" height="90">
                 </template>
             </el-table-column>
-            <el-table-column label="商品链接" prop="goods_link, goods_name">
+            <el-table-column label="商品链接" prop="goodsLink, goodsName">
                 <template v-slot="scope">
-                    <el-link :href="scope.row.goods_link" target="_blank" class="buttonText">{{scope.row.goods_name}}</el-link>
+                    <el-link :href="scope.row.goodsLink" target="_blank" class="buttonText">{{scope.row.goodsName}}</el-link>
                 </template>
             </el-table-column>
             <el-table-column prop="platform" label="平台" sortable />
@@ -280,19 +280,21 @@ export default {
         return {
             isShow: true, // 图书表格展示状态
             tableData: [{ // 列表项
-                goods_id: 1,
+                goodsId: 1,
                 price: 11999.0,
-                img_url: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
-                goods_link: 'https://element-plus.org',
-                goods_name: 'Apple/苹果 iPhone 16 Pro Max（A3297）512GB 原色钛金属 支持移动联通电信5G 双卡双待手机',
-                platform: '京东商城'
+                imgUrl: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
+                goodsLink: 'https://item.taobao.com/item.htm?priceTId=2150400417354720569504482ee7eb&utparam=%7B%22aplus_abtest%22%3A%2217cffc8bd67661cb8119ac07867882c1%22%7D&id=733463182856&ns=1&abbucket=14&xxc=taobaoSearch&skuId=5667505824822',
+                goodsName: 'Apple/苹果 iPhone 16 Pro Max（A3297）512GB 原色钛金属 支持移动联通电信5G 双卡双待手机',
+                platform: '京东商城',
+                skuId: '123'
             }, {
-                goods_id: 2,
+                goodsId: 2,
                 price: 499.0,
-                img_url: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
-                goods_link: 'https://element-plus.org',
-                goods_name: '小米（MI）Redmi 12C Helio G85 性能芯 5000万高清双摄 5000mAh长续航 4GB+128GB 深海蓝 智能手机小米红米',
-                platform: '天猫'
+                imgUrl: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
+                goodsLink: 'https://item.taobao.com/item.htm?priceTId=2150400417354720569504482ee7eb&utparam=%7B%22aplus_abtest%22%3A%22b0c894f527150d75d493bd1d5dd8750b%22%7D&id=827280200184&ns=1&abbucket=14&xxc=taobaoSearch&skuId=5553033081567',
+                goodsName: '小米（MI）Redmi 12C Helio G85 性能芯 5000万高清双摄 5000mAh长续航 4GB+128GB 深海蓝 智能手机小米红米',
+                platform: '天猫',
+                skuId: '234'
             }
             ],
             goodsToSearch: '', // 待搜索内容(对查询到的结果进行搜索)
@@ -435,10 +437,16 @@ export default {
             axios.post("/search",
                 { // 请求体
                     goodsToSearch: this.goodsToSearch
+                },
+                { 
+                    // 设置请求头，明确指定字符集为 UTF-8
+                    headers: {
+                        "Content-Type": "application/json; charset=UTF-8"
+                    }
                 })
                 .then(response => {
                     let tableData = response.data // 接收响应负载
-                    tableData.forEach(goods => { // 对于每个借书证
+                    tableData.forEach(goods => { // 对于每个商品
                         this.tableData.push(goods) // 将其加入到列表中
                     })
                 })

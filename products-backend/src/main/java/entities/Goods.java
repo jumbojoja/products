@@ -18,18 +18,19 @@ public final class Goods {
     @JSONField(name = "platform", ordinal = 6)
     private String platform;
     @JSONField(name = "sku_id", ordinal = 6)
-    private int sku_id;
+    private String sku_id;
 
     public Goods() {
     }
 
-    public Goods(int goods_id, String goods_name, String goods_link, String img_url, double price, String platform) {
+    public Goods(int goods_id, String goods_name, String goods_link, String img_url, double price, String platform, String sku_id) {
         this.goods_id = goods_id;
         this.goods_name = goods_name;
         this.goods_link = goods_link;
         this.img_url = img_url;
         this.price = price;
         this.platform = platform;
+        this.sku_id = sku_id;
     }
 
     @Override
@@ -85,11 +86,11 @@ public final class Goods {
         this.platform = platform;
     }
 
-    public int getSkuId() {
+    public String getSkuId() {
         return sku_id;
     }
 
-    public void setSkuId(int sku_id) {
+    public void setSkuId(String sku_id) {
         this.sku_id = sku_id;
     }
 }

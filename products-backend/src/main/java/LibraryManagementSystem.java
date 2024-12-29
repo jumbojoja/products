@@ -176,7 +176,7 @@ public interface LibraryManagementSystem {
 
     ApiResult checkuser(String user_name, String password, String email);
 
-    ApiResult addgoods(int sku_id, String goods_name, String goods_link, String img_url, double price, String platform);
+    ApiResult addgoods(String sku_id, String goods_name, String goods_link, String img_url, double price, String platform);
 
     /* ApiResult modifygoods(int goods_id, int sku_id, String goods_name, String goods_link, String img_url, double price, String platform); */
 

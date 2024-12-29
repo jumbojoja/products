@@ -12,10 +12,10 @@ create table `user` (
 
 create table `goods` (
     `goods_id` int not null auto_increment,
-    `sku_id` int not null,
+    `sku_id` varchar(127) not null,
     `goods_name` varchar(127) not null,
-    `goods_link` varchar(127) not null,
-    `img_url` varchar(127) not null,
+    `goods_link` varchar(512) not null,
+    `img_url` varchar(255) not null,
     `price` decimal(7, 2) not null default 0.00,
     `platform` varchar(63) not null,
     primary key (`goods_id`)
