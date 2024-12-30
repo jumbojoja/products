@@ -33,6 +33,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.concurrent.TimeUnit;
 import java.time.Duration;
@@ -168,6 +170,14 @@ public class Main {
                 String targetUrl = "https://search.jd.com/Search?keyword=" + to_search + "&enc=utf-8";
                 driver.get(targetUrl);
 
+                /* // 显式等待，直到价格元素加载完成
+                WebDriverWait wait = new WebDriverWait(driver, 10);
+                // 等待 <i data-price> 元素加载完成，等待条件是元素存在于 DOM 中
+                wait.until(ExpectedConditions.textToBePresentInElementLocated(
+                    By.cssSelector("i[data-price]"),
+                    "5"
+                )); */
+
                 driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
 
                 /* // 给用户时间登录
@@ -188,77 +198,56 @@ public class Main {
                 // 获取ul标签下的所有li标签
                 Elements liList = ul.select("li");
                 for (Element element : liList) {
-                    System.out.println("------------------");
                     // 过滤内层标签
                     if ("ps-item".equals(element.attr("class"))) {
                         continue;
                     }
-                    String img_url = element.getElementsByTag("img").first().attr("data-lazy-img");
-                    if (img_url.equals("done")) {
-                        Element imgElement = element.select("img").first();
-                        img_url = imgElement != null ? imgElement.attr("src") : "//img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
-                    }
-                    img_url = "https:" + img_url;
-
-                    Element priceElement = element.select("i[data-price]").first();
-                    String price = priceElement != null ? priceElement.text() : "1024.00"; 
-                    /* String price = element.getElementsByClass("p-price").first().text(); */
-                    String pricehtml = element.getElementsByClass("p-price").first().html();
-                    String shopName = element.getElementsByClass("p-shop").first().text();
-                    System.out.println(img_url);
-                    System.out.println(price);
-                    System.out.println(pricehtml);
-                    System.out.println(shopName);
-                }
-
-                // a
-                /* Elements div = document.getElementsByClass("tbpc-row tbpc-row-start");
-
-                Elements DivList = div.select("div");
-                for (Element element : DivList) {
-                    Elements goods = element.select("[class*='search-content-col']");
-                    Element link = goods.select("a").first();
+                    Element link = element.select("a").first();
                     if (link != null) {
                         // href
                         String href = link.attr("href");
                         href = "https:" + href;
 
-                        // skuID
-                        String regex = "skuId=(\\d+)";  // 匹配 skuId= 后的数字部分
-                        Pattern pattern = Pattern.compile(regex);
-                        Matcher matcher = pattern.matcher(href);
-                        String skuId = "100";
-                        if (matcher.find()) {
-                            // 获取匹配的 skuId
-                            skuId = matcher.group(1);
-                        } else {
-                        }
-
                         // img_url
-                        Element imgElement = goods.select("img").first();
-                        String img_url = imgElement != null ? imgElement.attr("src") : "https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
-
-                        // goods_name
-                        Element nameElement = goods.select("[class*='title--qJ7Xg_90']").first().select("span").first();
-                        String goods_name = nameElement != null ? nameElement.text() : "未找到";
+                        String img_url = element.getElementsByTag("img").first().attr("data-lazy-img");
+                        if (img_url.equals("done")) {
+                            Element imgElement = element.select("img").first();
+                            img_url = imgElement != null ? imgElement.attr("src") : "//img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
+                        }
+                        img_url = "https:" + img_url;
 
                         // price
-                        Element priceIntElement = goods.select("[class*='priceInt']").first();
-                        Element priceFloatElement = goods.select("[class*='priceFloat']").first();
-                        String priceInt = priceIntElement != null ? priceIntElement.text() : "1024";
-                        String priceFloat = priceFloatElement != null ? priceFloatElement.text() : ".00";
-                        String goodsprice = priceInt + priceFloat;
-                        double price = Double.parseDouble(goodsprice);
+                        Element priceElement = element.select("i[data-price]").first();
+                        String sprice = priceElement != null ? priceElement.text() : "1024.00";
+                        double price;
+                        try {
+                            // 尝试解析价格
+                            price = Double.parseDouble(sprice);
+                        } catch (NumberFormatException e) {
+                            // 如果解析失败，设置默认价格
+                            price = 1024.0;
+                        }
 
-                        String platform = "淘宝";
+                        // platform
+                        String shopName = element.getElementsByClass("p-shop").first().text();
 
-                        library.addgoods(skuId, goods_name, href, img_url, price, platform);
+                        // skuId
+                        String sku_id = element != null ? element.attr("data-sku") : "";
+
+                        // goodsname
+                        Element emElement = element.select("a > em").first();
+
+                        // 提取商品名（去除多余的空格）
+                        String productName = emElement != null ? emElement.text().trim() : "";
+
+                        library.addgoods(sku_id, productName, href, img_url, price, shopName);
                         // 此处并没有用到goods_id
-                        Goods agoods = new Goods(1, goods_name, href, img_url, price, platform, skuId);
+                        Goods agoods = new Goods(1, productName, href, img_url, price, shopName, sku_id);
                         Goods_list.add(agoods);
-
                     }
-                } */
+                    
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -329,7 +318,14 @@ public class Main {
                         String priceInt = priceIntElement != null ? priceIntElement.text() : "1024";
                         String priceFloat = priceFloatElement != null ? priceFloatElement.text() : ".00";
                         String goodsprice = priceInt + priceFloat;
-                        double price = Double.parseDouble(goodsprice);
+                        double price;
+                        try {
+                            // 尝试解析价格
+                            price = Double.parseDouble(goodsprice);
+                        } catch (NumberFormatException e) {
+                            // 如果解析失败，设置默认价格
+                            price = 1024.0;
+                        }
                         /* System.out.println(price); */
 
                         String platform = "淘宝";
@@ -346,6 +342,80 @@ public class Main {
                 e.printStackTrace();
             } finally {
                 driver1.quit(); // 关闭浏览器
+            }
+
+            WebDriver driver2 = new ChromeDriver(options);
+            // 唯品会
+            try {
+                // 登录后访问商品页面（示例链接）
+                String targetUrl = "https://category.vip.com/suggest.php?keyword=" + to_search;
+                driver2.get(targetUrl);
+
+                driver2.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+
+                /* // 给用户时间登录
+                System.out.println("请手动登录唯品会，登录后按回车键继续...");
+                
+                // 等待用户手动登录并按回车键继续
+                System.in.read();  // 阻塞程序，直到用户按下回车 */
+
+                // 获取页面 HTML
+                String pageSource = driver2.getPageSource();
+
+                // 使用 Jsoup 解析 HTML
+                Document document = Jsoup.parse(pageSource);
+
+                Elements section = document.getElementsByClass("goods-list c-goods-list--normal");
+
+                Elements DivList = section.select("div");
+                for (Element element : DivList) {
+                    Elements goods = element.select("[class*='c-goods-item  J-goods-item c-goods-item--auto-width']");
+                    Element link = goods.select("a").first();
+                    if (link != null) {
+                        // href
+                        String href = link.attr("href");
+                        href = "https:" + href;
+
+                        // skuID
+                        String sku_id = element != null ? element.attr("data-product-id") : "";
+
+                        // img_url
+                        Element imgElement = goods.select("img").first();
+                        String img_url = imgElement != null ? imgElement.attr("data-original") : "https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
+                        img_url = "https:" + img_url;
+
+                        // goods_name
+                        Element nameElement = goods.select("img").first();
+                        String goods_name = nameElement != null ? nameElement.attr("alt") : "占位符";
+
+                        // price
+                        Element priceIntElement = link.select("[class*='c-goods-item__sale-price J-goods-item__sale-price']").first();
+                        Element priceFloatElement = goods.select("[class*='c-goods-item__sale-price-decimal']").first();
+                        String priceInt = priceIntElement != null ? priceIntElement.text().replace("¥", "").trim() : "1024";
+                        String priceFloat = priceFloatElement != null ? priceFloatElement.text() : ".00";
+                        String goodsprice = priceInt + priceFloat;
+                        double price;
+                        try {
+                            // 尝试解析价格
+                            price = Double.parseDouble(goodsprice);
+                        } catch (NumberFormatException e) {
+                            // 如果解析失败，设置默认价格
+                            price = 1024.0;
+                        }
+
+                        String platform = "唯品会";
+
+                        library.addgoods(sku_id, goods_name, href, img_url, price, platform);
+                        // 此处并没有用到goods_id
+                        Goods agoods = new Goods(1, goods_name, href, img_url, price, platform, sku_id);
+                        Goods_list.add(agoods);
+
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                driver2.quit(); // 关闭浏览器
             }
             
             GoodsResults result = new GoodsResults(Goods_list);
