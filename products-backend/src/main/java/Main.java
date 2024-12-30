@@ -150,25 +150,6 @@ public class Main {
             JSONObject jobj = JSON.parseObject(requestBodyBuilder.toString());
             String to_search = jobj.getString("goodsToSearch");
 
-            // 京东
-
-            /* String url = "https://search.jd.com/Search?keyword=" + to_search;
-            System.out.println(url);
-
-            Map<String, String> cookies = new HashMap<String, String>();
-            cookies.put("thor", "1DF144F5752806C2B375B090174A9A2D530A6B054C7DB431886D547C8BB71ABACADD6EE089D7290403DE1879116F9B2D382FD71DB60A2660B51D51FEF57BC57D6695DB494ECEC2F7C3FB124A1FE9975AB707CF1D529D36661976323F0591096AB92DA3D8C19103A0BB7584144357984DFC9062C731C54FC91C133F4ACC1CA4E0EBB690142CEB9D272CBF7545BA31F400CDF445C6EB84A7AC9D09BCCF53F555D0");
-            Document document = Jsoup.connect(url).cookies(cookies).post();
-            Elements ul = document.getElementsByClass("gl-warp clearfix");
-            // 获取ul标签下的所有li标签
-            Elements liList = ul.select("li");
-            for (Element element : liList) {
-                System.out.println("------------------");
-                System.out.println(element);
-                System.out.println();
-            } */
-
-            // 淘宝
-
             System.setProperty("webdriver.chrome.driver", "C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe");
             System.setProperty("webdriver.chrome.whitelistedIps", "");
 
@@ -181,13 +162,117 @@ public class Main {
 
             List<Goods> Goods_list = new ArrayList<>();
 
+            // 京东
             try {
                 // 登录后访问商品页面（示例链接）
-                /* String targetUrl = "https://s.taobao.com/search?commend=all&ie=utf8&initiative_id=tbindexz_20170306&page=1&q=phone&tab=all"; */
-                String targetUrl = "https://s.taobao.com/search?commend=all&ie=utf8&initiative_id=tbindexz_20170306&page=1&q=" + to_search + "&tab=all";
+                String targetUrl = "https://search.jd.com/Search?keyword=" + to_search + "&enc=utf-8";
                 driver.get(targetUrl);
 
                 driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+
+                /* // 给用户时间登录
+                System.out.println("请手动登录京东，登录后按回车键继续...");
+                
+                // 等待用户手动登录并按回车键继续
+                System.in.read();  // 阻塞程序，直到用户按下回车 */
+
+                // 获取页面 HTML
+                String pageSource = driver.getPageSource();
+
+                // 使用 Jsoup 解析 HTML
+                Document document = Jsoup.parse(pageSource);
+
+
+                // 通过class获取ul标签
+                Elements ul = document.getElementsByClass("gl-warp clearfix");
+                // 获取ul标签下的所有li标签
+                Elements liList = ul.select("li");
+                for (Element element : liList) {
+                    System.out.println("------------------");
+                    // 过滤内层标签
+                    if ("ps-item".equals(element.attr("class"))) {
+                        continue;
+                    }
+                    String img_url = element.getElementsByTag("img").first().attr("data-lazy-img");
+                    if (img_url.equals("done")) {
+                        Element imgElement = element.select("img").first();
+                        img_url = imgElement != null ? imgElement.attr("src") : "//img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
+                    }
+                    img_url = "https:" + img_url;
+
+                    Element priceElement = element.select("i[data-price]").first();
+                    String price = priceElement != null ? priceElement.text() : "1024.00"; 
+                    /* String price = element.getElementsByClass("p-price").first().text(); */
+                    String pricehtml = element.getElementsByClass("p-price").first().html();
+                    String shopName = element.getElementsByClass("p-shop").first().text();
+                    System.out.println(img_url);
+                    System.out.println(price);
+                    System.out.println(pricehtml);
+                    System.out.println(shopName);
+                }
+
+                // a
+                /* Elements div = document.getElementsByClass("tbpc-row tbpc-row-start");
+
+                Elements DivList = div.select("div");
+                for (Element element : DivList) {
+                    Elements goods = element.select("[class*='search-content-col']");
+                    Element link = goods.select("a").first();
+                    if (link != null) {
+                        // href
+                        String href = link.attr("href");
+                        href = "https:" + href;
+
+                        // skuID
+                        String regex = "skuId=(\\d+)";  // 匹配 skuId= 后的数字部分
+                        Pattern pattern = Pattern.compile(regex);
+                        Matcher matcher = pattern.matcher(href);
+                        String skuId = "100";
+                        if (matcher.find()) {
+                            // 获取匹配的 skuId
+                            skuId = matcher.group(1);
+                        } else {
+                        }
+
+                        // img_url
+                        Element imgElement = goods.select("img").first();
+                        String img_url = imgElement != null ? imgElement.attr("src") : "https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
+
+                        // goods_name
+                        Element nameElement = goods.select("[class*='title--qJ7Xg_90']").first().select("span").first();
+                        String goods_name = nameElement != null ? nameElement.text() : "未找到";
+
+                        // price
+                        Element priceIntElement = goods.select("[class*='priceInt']").first();
+                        Element priceFloatElement = goods.select("[class*='priceFloat']").first();
+                        String priceInt = priceIntElement != null ? priceIntElement.text() : "1024";
+                        String priceFloat = priceFloatElement != null ? priceFloatElement.text() : ".00";
+                        String goodsprice = priceInt + priceFloat;
+                        double price = Double.parseDouble(goodsprice);
+
+                        String platform = "淘宝";
+
+                        library.addgoods(skuId, goods_name, href, img_url, price, platform);
+                        // 此处并没有用到goods_id
+                        Goods agoods = new Goods(1, goods_name, href, img_url, price, platform, skuId);
+                        Goods_list.add(agoods);
+
+                    }
+                } */
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                driver.quit();
+            }
+
+            WebDriver driver1 = new ChromeDriver(options);
+            // 淘宝
+            try {
+                // 登录后访问商品页面（示例链接）
+                String targetUrl = "https://s.taobao.com/search?commend=all&ie=utf8&initiative_id=tbindexz_20170306&page=1&q=" + to_search + "&tab=all";
+                driver1.get(targetUrl);
+
+                driver1.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
 
                 /* // 给用户时间登录
                 System.out.println("请手动登录淘宝，登录后按回车键继续...");
@@ -196,7 +281,7 @@ public class Main {
                 System.in.read();  // 阻塞程序，直到用户按下回车 */
 
                 // 获取页面 HTML
-                String pageSource = driver.getPageSource();
+                String pageSource = driver1.getPageSource();
 
                 // 使用 Jsoup 解析 HTML
                 Document document = Jsoup.parse(pageSource);
@@ -260,7 +345,7 @@ public class Main {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                driver.quit(); // 关闭浏览器
+                driver1.quit(); // 关闭浏览器
             }
             
             GoodsResults result = new GoodsResults(Goods_list);
