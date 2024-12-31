@@ -86,8 +86,17 @@
                 <el-input v-model="newUserInfo.password" style="width: 12.5vw;" clearable />
             </div>
             <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                确认密码：
+                <el-input v-model="checkpass" style="width: 12.5vw;" clearable />
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
                 电子邮件：
                 <el-input v-model="newUserInfo.email" style="width: 12.5vw;" clearable />
+                <el-button style="margin-left: 2vw" type="primary">发送验证码</el-button>
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                验证码：
+                <el-input v-model="checknum" style="width: 12.5vw;" clearable />
             </div>
 
             <template #footer>
@@ -267,6 +276,8 @@ export default {
             newUserVisable: false, // 新建用户对话框可见性
             loginVisable: false, // 用户登录对话框可见性
             collectsVisable: false,
+            checknum: '',
+            checkpass: '',
             newUserInfo: { // 待新建用户信息
                 user_name: '',
                 password: '',
