@@ -179,7 +179,114 @@ public class LibraryManagementSystemImpl implements LibraryManagementSystem {
                 agoods.setGoodsName(resultSet.getString("goods_name"));
                 agoods.setGoodsLink(resultSet.getString("goods_link"));
                 agoods.setImgUrl(resultSet.getString("img_url"));
-                agoods.setPrice(resultSet.getInt("price"));
+                agoods.setPrice(resultSet.getDouble("price"));
+                agoods.setPlatform(resultSet.getString("platform"));
+                goodsList.add(agoods);
+            }
+            GoodsResults goodsResults = new GoodsResults(goodsList);
+            return new ApiResult(true, goodsResults);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            rollback(conn);
+            return new ApiResult(false, "searchgoods fail");
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public ApiResult addcollect(String sku_id, int user_id) {
+        Connection conn = connector.getConn();
+        try {
+            conn.setAutoCommit(false); 
+
+            // 1. 检查用户是否存在
+            String sql_select_user = "SELECT * FROM user WHERE user_id = ?";
+            PreparedStatement userStmt = conn.prepareStatement(sql_select_user);
+            userStmt.setInt(1, user_id);
+            ResultSet userResult = userStmt.executeQuery();
+            if (!userResult.next()) {
+                return new ApiResult(false, "User not found");
+            }
+
+            // 2. 检查商品是否存在
+            String sql_select_goods = "SELECT * FROM goods WHERE sku_id = ?";
+            PreparedStatement goodsStmt = conn.prepareStatement(sql_select_goods);
+            goodsStmt.setString(1, sku_id);
+            ResultSet goodsResult = goodsStmt.executeQuery();
+            if (!goodsResult.next()) {
+                return new ApiResult(false, "Goods not found");
+            }
+
+            // 获取商品信息
+            String goods_name = goodsResult.getString("goods_name");
+            String goods_link = goodsResult.getString("goods_link");
+            String img_url = goodsResult.getString("img_url");
+            double price = goodsResult.getDouble("price");
+            String platform = goodsResult.getString("platform");
+
+            // 3. 将商品添加到收藏表 collectgoods
+            String sql_insert_collect = "INSERT INTO collectgoods(goods_id, user_id, sku_id, goods_name, goods_link, img_url, price, platform) " +
+                                        "VALUES((SELECT goods_id FROM goods WHERE sku_id = ?), ?, ?, ?, ?, ?, ?, ?)";
+            PreparedStatement insertStmt = conn.prepareStatement(sql_insert_collect);
+            insertStmt.setString(1, sku_id);
+            insertStmt.setInt(2, user_id);
+            insertStmt.setString(3, sku_id);   // sku_id
+            insertStmt.setString(4, goods_name);
+            insertStmt.setString(5, goods_link);
+            insertStmt.setString(6, img_url);
+            insertStmt.setDouble(7, price);
+            insertStmt.setString(8, platform);
+
+            int rows = insertStmt.executeUpdate();
+            
+            // 检查是否插入成功
+            if (rows == 1) {
+                conn.commit();
+                return new ApiResult(true, "Item added to collection successfully");
+            } else {
+                conn.rollback();
+                return new ApiResult(false, "Failed to add item to collection");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            rollback(conn);
+            return new ApiResult(false, "Database error occurred");
+        } finally {
+            try {
+                conn.setAutoCommit(true);  // 恢复自动提交
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public ApiResult showCollects(int user_id) {
+        Connection conn = connector.getConn();
+        try {
+            conn.setAutoCommit(false);
+
+            String sql_select = "SELECT * FROM collectgoods WHERE user_id = ?";
+            PreparedStatement statement = conn.prepareStatement(sql_select);
+            statement.setInt(1, user_id);
+            ResultSet resultSet = statement.executeQuery();
+            commit(conn);
+
+            List<Goods> goodsList = new ArrayList<>();
+            while (resultSet.next()) {
+                Goods agoods = new Goods();
+                agoods.setGoodsId(resultSet.getInt("goods_id"));
+                agoods.setSkuId(resultSet.getString("sku_id"));
+                agoods.setGoodsName(resultSet.getString("goods_name"));
+                agoods.setGoodsLink(resultSet.getString("goods_link"));
+                agoods.setImgUrl(resultSet.getString("img_url"));
+                agoods.setPrice(resultSet.getDouble("price"));
                 agoods.setPlatform(resultSet.getString("platform"));
                 goodsList.add(agoods);
             }

@@ -180,6 +180,10 @@ public interface LibraryManagementSystem {
 
     ApiResult searchgoods(String sku_id);
 
+    ApiResult addcollect(String sku_id, int user_id);
+
+    ApiResult showCollects(int user_id);
+
     /* ApiResult modifygoods(int goods_id, int sku_id, String goods_name, String goods_link, String img_url, double price, String platform); */
 
     /**

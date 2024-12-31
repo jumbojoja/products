@@ -9,10 +9,20 @@
             class="input-with-select"
             >
                 <template #prepend>
-                    <el-select v-model="select" placeholder="Select" style="width: 115px">
-                    <el-option label="Restaurant" value="1" />
-                    <el-option label="Order No." value="2" />
-                    <el-option label="Tel" value="3" />
+                    <el-select v-model="select" placeholder="品类" style="width: 115px">
+                    <el-option label="数码产品" value="1" />
+                    <el-option label="男装" value="2" />
+                    <el-option label="女装" value="3" />
+                    <el-option label="男鞋" value="4" />
+                    <el-option label="女鞋" value="5" />
+                    <el-option label="零食" value="6" />
+                    <el-option label="玩具" value="7" />
+                    <el-option label="药品" value="8" />
+                    <el-option label="图书" value="9" />
+                    <el-option label="二手" value="10" />
+                    <el-option label="生鲜" value="11" />
+                    <el-option label="个护化妆" value="12" />
+                    <el-option label="五金机电" value="13" />
                     </el-select>
                 </template>
                 <template #append>
@@ -20,9 +30,10 @@
                 </template>
             </el-input>
 
-            <span style="margin-left: 40px;">
+            <span style="margin-left: -10px;">
                 <el-button type="primary" @click="loginVisable = true">登录</el-button>
                 <el-button type="primary" @click="newUserVisable = true">注册</el-button>
+                <el-button type="primary" @click="collectsVisable = true, SearchCollects()">收藏夹</el-button>
             </span>
         </div>    
 
@@ -54,8 +65,8 @@
             </el-table-column>
             <el-table-column label="收藏">
                 <template v-slot="scope">
-                    <el-button type="warning" v-model="scope.row.book_id"
-                    @click="this.removeBookInfo.book_id = scope.row.book_id, this.toremove = scope.row.book_id, this.removeBookVisable = true"> 
+                    <el-button type="warning" v-model="scope.row.skuId"
+                    @click="this.collectToAdd = scope.row.skuId, this.collect_goods_visable = true"> 
                         <el-icon>
                             <StarFilled />
                         </el-icon>
@@ -119,18 +130,37 @@
 
         </el-dialog>
 
-        <!-- 删除图书对话框 -->  
-        <el-dialog v-model="removeBookVisable" title="删除图书" width="30%">
-            <span>确定删除<span style="font-weight: bold;">{{ toremove }}号图书</span>吗？</span>
-
+        <!-- 收藏商品对话框 -->  
+        <el-dialog v-model="collect_goods_visable" title="收藏商品" width="30%">
+            <span>确定收藏此商品？</span>
             <template #footer>
                 <span class="dialog-footer">
-                    <el-button @click="removeBookVisable = false">取消</el-button>
-                    <el-button type="danger" @click="ConfirmRemoveBook">
-                        删除
+                    <el-button @click="collect_goods_visable = false">取消</el-button>
+                    <el-button type="warning" @click="ConfirmCollectGoods">
+                        收藏
                     </el-button>
                 </span>
             </template>
+        </el-dialog>
+
+        <!-- 用户收藏商品对话框 -->
+        <el-dialog v-model="collectsVisable" title="用户收藏" width="80%" align-center>
+            <el-table v-if="isShow" :data="fitlerCollectData" height="600"
+                :default-sort="{ prop: 'price', order: 'ascending' }" :table-layout="'auto'"
+                style="width: 90%; margin-left: 50px; margin-top: 30px; margin-right: 50px; max-width: 92vw;" highlight-current-row>
+                <el-table-column label="照片" prop="imgUrl">
+                    <template v-slot="scope">
+                        <img :src="scope.row.imgUrl" alt="图片" width="90" height="90">
+                    </template>
+                </el-table-column>
+                <el-table-column label="商品链接" prop="goodsLink, goodsName">
+                    <template v-slot="scope">
+                        <el-link :href="scope.row.goodsLink" target="_blank" class="buttonText">{{scope.row.goodsName}}</el-link>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="platform" label="平台" sortable />
+                <el-table-column prop="price" label="价格" sortable />
+            </el-table>
         </el-dialog>
 
     </el-scrollbar>
@@ -202,10 +232,28 @@ export default {
                 skuId: '234'
             }
             ],
+            collectData: [{ // 列表项
+                goodsId: 1,
+                price: 11999.0,
+                imgUrl: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
+                goodsLink: 'https://item.taobao.com/item.htm?priceTId=2150400417354720569504482ee7eb&utparam=%7B%22aplus_abtest%22%3A%2217cffc8bd67661cb8119ac07867882c1%22%7D&id=733463182856&ns=1&abbucket=14&xxc=taobaoSearch&skuId=5667505824822',
+                goodsName: 'Apple/苹果 iPhone 16 Pro Max（A3297）512GB 原色钛金属 支持移动联通电信5G 双卡双待手机',
+                platform: '京东商城',
+                skuId: '123'
+            }, {
+                goodsId: 2,
+                price: 499.0,
+                imgUrl: 'https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg',
+                goodsLink: 'https://item.taobao.com/item.htm?priceTId=2150400417354720569504482ee7eb&utparam=%7B%22aplus_abtest%22%3A%22b0c894f527150d75d493bd1d5dd8750b%22%7D&id=827280200184&ns=1&abbucket=14&xxc=taobaoSearch&skuId=5553033081567',
+                goodsName: '小米（MI）Redmi 12C Helio G85 性能芯 5000万高清双摄 5000mAh长续航 4GB+128GB 深海蓝 智能手机小米红米',
+                platform: '天猫',
+                skuId: '234'
+            }
+            ],
             goodsToSearch: '', // 待搜索内容(对查询到的结果进行搜索)
             priceToSearch: '',
+            collectToAdd: '',
             toSearch: '', // 待搜索内容(对查询到的结果进行搜索)
-            toremove: '', // 待删除书籍
             Delete,
             Edit,
             Search,
@@ -215,18 +263,10 @@ export default {
             addBookVisable: false, // 批量入库对话框可见性
             borrowBookVisable: false, // 借书对话框可见性
             returnBookVisable: false, // 还书对话框可见性
-            removeBookVisable: false, // 删除书对话框可见性
+            collect_goods_visable: false, // 删除书对话框可见性
             newUserVisable: false, // 新建用户对话框可见性
             loginVisable: false, // 用户登录对话框可见性
-            newBookInfo: { // 待新建书信息
-                category: '',
-                title: '',
-                press: '',
-                publish_year: '',
-                author: '',
-                price: '',
-                stock: ''
-            },
+            collectsVisable: false,
             newUserInfo: { // 待新建用户信息
                 user_name: '',
                 password: '',
@@ -247,15 +287,21 @@ export default {
                 author: '',
                 price: ''
             },
-            removeBookInfo: {
-                book_id: ''
-            },
             fileContent: ''
         }
     },
     computed: {
         fitlerTableData() { // 搜索规则
             return this.tableData.filter(
+                (tuple) =>
+                    (this.toSearch == '') || // 搜索框为空，即不搜索
+                    tuple.skuId == this.toSearch || // 商品ID与搜索要求一致
+                    tuple.goodsName.includes(this.toSearch) ||
+                    tuple.price.toString().includes(this.toSearch)
+            )
+        },
+        fitlerCollectData() { // 搜索收藏规则
+            return this.collectData.filter(
                 (tuple) =>
                     (this.toSearch == '') || // 搜索框为空，即不搜索
                     tuple.skuId == this.toSearch || // 商品ID与搜索要求一致
@@ -399,42 +445,40 @@ export default {
                     this.loginVisable = false // 将对话框设置为不可见
                 })
         },
-        ConfirmModifyBook() {
+        ConfirmCollectGoods() {
             // 发出POST请求
-            axios.post("/modifyBook",
+            axios.post("/addcollect",
                 { // 请求体
-                    book_id: this.modifyBookInfo.book_id,
-                    category: this.modifyBookInfo.category,
-                    title: this.modifyBookInfo.title,
-                    press: this.modifyBookInfo.press,
-                    publish_year: this.modifyBookInfo.publish_year,
-                    author: this.modifyBookInfo.author,
-                    price: this.modifyBookInfo.price,
+                    user_id: this.loginInfo.user_id,
+                    sku_id: this.collectToAdd
                 })
                 .then(response => {
                     if (response.data == "1") {
-                        ElMessage.success("书籍信息修改成功") // 显示消息提醒
+                        ElMessage.success("收藏商品成功") // 显示消息提醒
                     } else {
-                        ElMessage.info("书籍信息修改失败")
+                        ElMessage.info("收藏商品失败")
                     }
-                    this.goods_history_price = false // 将对话框设置为不可见
-                    this.QueryBooks() // 重新查询书以刷新页面
+                    this.collect_goods_visable = false // 将对话框设置为不可见
                 })
         },
-        ConfirmRemoveBook() {
-            // 发出POST请求
-            axios.post("/removebook",
+        SearchCollects() {
+            this.collectData = [] // 清空列表
+            axios.post("/searchcollect",
                 { // 请求体
-                    book_id: this.removeBookInfo.book_id,
+                    user_id: this.loginInfo.user_id
+                },
+                { 
+                    // 设置请求头，明确指定字符集为 UTF-8
+                    headers: {
+                        "Content-Type": "application/json; charset=UTF-8"
+                    }
                 })
                 .then(response => {
-                    if (response.data == "1") {
-                        ElMessage.success("删除图书成功") // 显示消息提醒
-                    } else {
-                        ElMessage.info("删除图书失败(图书未归还)")
-                    }
-                    this.removeBookVisable = false // 将对话框设置为不可见
-                    this.QueryBooks() // 重新查询书以刷新页面
+                    let collectData = response.data // 接收响应负载
+                    collectData.forEach(goods => { // 对于每个商品
+                        this.collectData.push(goods) // 将其加入到列表中
+                    })
+                    ElMessage.info("您收藏的商品无降价")
                 })
         },
         handleFile(event) {
@@ -479,8 +523,6 @@ export default {
         },
     },
     mounted() { // 当页面被渲染时
-        /* this.QueryBooks() */ // 查询书
-        /* this.initChart(); // 初始化图表 */
     }
 }
 </script>

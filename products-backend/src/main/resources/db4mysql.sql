@@ -1,6 +1,7 @@
 drop table if exists `user`;
 drop table if exists `goods`;
 drop table if exists `historygoods`;
+drop table if exists `collectgoods`;
 
 create table `user` (
     `user_id` int not null auto_increment,
@@ -34,12 +35,17 @@ create table `historygoods` (
     primary key (`goods_id`)
 ) engine=innodb charset=utf8mb4;
 
-create table `borrow` (
-  `card_id` int not null,
-  `book_id` int not null,
-  `borrow_time` bigint not null,
-  `return_time` bigint not null default 0,
-  primary key (`card_id`, `book_id`, `borrow_time`),
-  foreign key (`card_id`) references `card`(`card_id`) on delete cascade on update cascade,
-  foreign key (`book_id`) references `book`(`book_id`) on delete cascade on update cascade
+create table `collectgoods` (
+    `collect_id` int not null auto_increment,
+    `goods_id` int not null,
+    `user_id` int not null,
+    `sku_id` varchar(127) not null,
+    `goods_name` varchar(127) not null,
+    `goods_link` varchar(512) not null,
+    `img_url` varchar(512) not null,
+    `price` decimal(7, 2) not null default 0.00,
+    `platform` varchar(63) not null,
+    primary key (`collect_id`),
+    foreign key (`goods_id`) references `goods`(`goods_id`) on delete cascade on update cascade,
+    foreign key (`user_id`) references `user`(`user_id`) on delete cascade on update cascade
 ) engine=innodb charset=utf8mb4;

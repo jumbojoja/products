@@ -99,6 +99,10 @@ public class Main {
             server.createContext("/search", new SearchGoodsHandler());
             // 查询历史价格
             server.createContext("/pricesearch", new SearchPriceHandler());
+            // 添加收藏
+            server.createContext("/addcollect", new CollectGoodsHandler());
+            // 查询用户收藏
+            server.createContext("/searchcollect", new SearchCollectsHandler());
 
             // 启动服务器
             server.start();
@@ -692,6 +696,183 @@ public class Main {
             } else {
                 outputStream.write("0".getBytes());
             }
+            outputStream.close();
+        }
+
+        private void handleOptionsRequest(HttpExchange exchange) throws IOException {
+            // 读取OPTION请求体
+            InputStream requestBody = exchange.getRequestBody();
+            // 用这个请求体（输入流）构造个buffered reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+            // 拼字符串的
+            StringBuilder requestBodyBuilder = new StringBuilder();
+            // 用来读的
+            String line;
+            // 没读完，一直读，拼到string builder里
+            while ((line = reader.readLine()) != null) {
+                requestBodyBuilder.append(line);
+            }
+        
+            // 看看读到了啥
+            // 实际处理可能会更复杂点
+            System.out.println("Received OPTION request : " + requestBodyBuilder.toString());
+        
+            // 响应头
+            exchange.getResponseHeaders().set("Content-Type", "text/plain");
+            // 响应状态码200
+            exchange.sendResponseHeaders(204, 0);
+        
+            // 剩下三个和GET一样
+            OutputStream outputStream = exchange.getResponseBody();
+            outputStream.write("successfull".getBytes());
+            outputStream.close();
+        }
+    }
+
+    static class CollectGoodsHandler implements HttpHandler {
+        // 关键重写handle方法
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // 允许所有域的请求，cors处理
+            Headers headers = exchange.getResponseHeaders();
+            headers.add("Access-Control-Allow-Origin", "*");
+            headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            headers.add("Access-Control-Allow-Headers", "Content-Type");
+            // 解析请求的方法，看GET还是POST
+            String requestMethod = exchange.getRequestMethod();
+
+            if (requestMethod.equals("POST")) {
+                // 处理POST
+                handlePostRequest(exchange);
+            } else if (requestMethod.equals("OPTIONS")) {
+                // 处理OPTIONS
+                handleOptionsRequest(exchange);
+            } else {
+                // 其他请求返回405 Method Not Allowed
+                exchange.sendResponseHeaders(405, -1);
+            }
+        }
+
+        private void handlePostRequest(HttpExchange exchange) throws IOException {
+            // 读取POST请求体
+            InputStream requestBody = exchange.getRequestBody();
+            // 用这个请求体（输入流）构造个buffered reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+            // 拼字符串的
+            StringBuilder requestBodyBuilder = new StringBuilder();
+            // 用来读的
+            String line;
+            // 没读完，一直读，拼到string builder里
+            while ((line = reader.readLine()) != null) {
+                requestBodyBuilder.append(line);
+            }
+        
+            JSONObject jobj = JSON.parseObject(requestBodyBuilder.toString());
+            int user_id = jobj.getInteger("user_id");
+            String sku_id = jobj.getString("sku_id");
+            ApiResult result = library.addcollect(sku_id, user_id);
+            String ret = JSON.toJSONString(result.payload);
+        
+            // 响应头
+            exchange.getResponseHeaders().set("Content-Type", "text/plain");
+            // 响应状态码200
+            exchange.sendResponseHeaders(200, 0);
+        
+            // 剩下三个和GET一样
+            OutputStream outputStream = exchange.getResponseBody();
+            if (result.ok == true) {
+                outputStream.write("1".getBytes());
+            } else {
+                outputStream.write("0".getBytes());
+            }
+            outputStream.close();
+        }
+
+        private void handleOptionsRequest(HttpExchange exchange) throws IOException {
+            // 读取OPTION请求体
+            InputStream requestBody = exchange.getRequestBody();
+            // 用这个请求体（输入流）构造个buffered reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+            // 拼字符串的
+            StringBuilder requestBodyBuilder = new StringBuilder();
+            // 用来读的
+            String line;
+            // 没读完，一直读，拼到string builder里
+            while ((line = reader.readLine()) != null) {
+                requestBodyBuilder.append(line);
+            }
+        
+            // 看看读到了啥
+            // 实际处理可能会更复杂点
+            System.out.println("Received OPTION request : " + requestBodyBuilder.toString());
+        
+            // 响应头
+            exchange.getResponseHeaders().set("Content-Type", "text/plain");
+            // 响应状态码200
+            exchange.sendResponseHeaders(204, 0);
+        
+            // 剩下三个和GET一样
+            OutputStream outputStream = exchange.getResponseBody();
+            outputStream.write("successfull".getBytes());
+            outputStream.close();
+        }
+    }
+
+    static class SearchCollectsHandler implements HttpHandler {
+        // 关键重写handle方法
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // 允许所有域的请求，cors处理
+            Headers headers = exchange.getResponseHeaders();
+            headers.add("Access-Control-Allow-Origin", "*");
+            headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            headers.add("Access-Control-Allow-Headers", "Content-Type");
+            // 解析请求的方法，看GET还是POST
+            String requestMethod = exchange.getRequestMethod();
+
+            if (requestMethod.equals("POST")) {
+                // 处理POST
+                handlePostRequest(exchange);
+            } else if (requestMethod.equals("OPTIONS")) {
+                // 处理OPTIONS
+                handleOptionsRequest(exchange);
+            } else {
+                // 其他请求返回405 Method Not Allowed
+                exchange.sendResponseHeaders(405, -1);
+            }
+        }
+
+        private void handlePostRequest(HttpExchange exchange) throws IOException {
+            // 读取POST请求体
+            InputStream requestBody = exchange.getRequestBody();
+            // 用这个请求体（输入流）构造个buffered reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody, "UTF-8"));
+            // 拼字符串的
+            StringBuilder requestBodyBuilder = new StringBuilder();
+            // 用来读的
+            String line;
+            // 没读完，一直读，拼到string builder里
+            while ((line = reader.readLine()) != null) {
+                requestBodyBuilder.append(line);
+            }
+        
+            JSONObject jobj = JSON.parseObject(requestBodyBuilder.toString());
+            int user_id = jobj.getInteger("user_id");
+
+            ApiResult apiresult = library.showCollects(user_id);
+            String response = JSON.toJSONString(apiresult.payload);
+            JSONObject object = JSONObject.parseObject(response);
+            JSONArray jsarr = object.getJSONArray("results");
+            String ret = JSON.toJSONString(jsarr);
+        
+            // 响应头
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+            // 响应状态码200
+            exchange.sendResponseHeaders(200, 0);
+        
+            // 剩下三个和GET一样
+            OutputStream outputStream = exchange.getResponseBody();
+            outputStream.write(ret.getBytes("UTF-8"));
             outputStream.close();
         }
 
