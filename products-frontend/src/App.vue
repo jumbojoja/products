@@ -12,36 +12,10 @@
           </div>
         </el-header>
         <el-container style="width: 100%; ">
-          <!-- <el-aside class="aside" style="display: flex;">
-            <el-menu active-text-color="#ffd04b" background-color="#0270c1" default-active="1" text-color="#fff"
-              style="height:100%; width: 100%;" :router="true">
-              <el-menu-item index="book">
-                <el-icon>
-                  <Reading />
-                </el-icon>
-                <span>图书管理</span>
-              </el-menu-item>
-              <el-menu-item index="card">
-                <el-icon>
-                  <Postcard />
-                </el-icon>
-                <span>借书证管理</span>
-              </el-menu-item>
-              <el-menu-item index="borrow">
-                <el-icon>
-                  <Tickets />
-                </el-icon>
-                <span>借书记录查询</span>
-              </el-menu-item>
-
-            </el-menu>
-          </el-aside> -->
-
           <el-main style="height: 100%; width: 100%; ">
             <el-scrollbar height="100%">
               <RouterView class="content" style="height: 90vh; max-height: 100%; background-color: white; color: black;" />
             </el-scrollbar>
-
           </el-main>
         </el-container>
       </el-container>
