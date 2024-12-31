@@ -105,33 +105,40 @@ public class LibraryManagementSystemImpl implements LibraryManagementSystem {
         Connection conn = connector.getConn();
         try {
             conn.setAutoCommit(false);
-            // avoid injection
-            String sql_select = "SELECT * FROM goods WHERE sku_id = ? AND price = ?";
-            PreparedStatement statement = conn.prepareStatement(sql_select);
+
+            String sql_insert = "INSERT INTO historygoods(sku_id, goods_name, goods_link, img_url, price, platform) " +
+                "VALUES(?, ?, ?, ?, ?, ?) ";
+            PreparedStatement insert_statement = conn.prepareStatement(sql_insert);
+            insert_statement.setString(1, sku_id);
+            insert_statement.setString(2, goods_name);
+            insert_statement.setString(3, goods_link);
+            insert_statement.setString(4, img_url);
+            insert_statement.setDouble(5, price);
+            insert_statement.setString(6, platform);
+
+            int rows1 = insert_statement.executeUpdate();
+            commit(conn);
+
+            // 使用 ON DUPLICATE KEY UPDATE 插入或更新商品信息
+            String sql_insert_update = "INSERT INTO goods(sku_id, goods_name, goods_link, img_url, price, platform) " +
+                "VALUES(?, ?, ?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE " +
+                "goods_name = VALUES(goods_name), " +
+                "goods_link = VALUES(goods_link), " +
+                "img_url = VALUES(img_url), " +
+                "price = VALUES(price), " +
+                "platform = VALUES(platform)";
+            PreparedStatement statement = conn.prepareStatement(sql_insert_update);
             statement.setString(1, sku_id);
-            statement.setDouble(2, price);
-            ResultSet resultSet = statement.executeQuery();
-            // check if the goods already exists
-            if (resultSet.next()) {
-                String sql_del = "DELETE FROM goods WHERE sku_id = ?";
-                PreparedStatement statement_del = conn.prepareStatement(sql_del);
-                statement_del.setString(1, sku_id);
-                int ret = statement_del.executeUpdate();
-                if (ret == 1) {
-                    commit(conn);
-                }
-            }
-            String sql_insert = "INSERT INTO goods(sku_id,goods_name,goods_link,img_url,price,platform) VALUES(?,?,?,?,?,?)";
-            // insert the book and get its id
-            PreparedStatement insertStmt = conn.prepareStatement(sql_insert, Statement.RETURN_GENERATED_KEYS);
-            insertStmt.setString(1, sku_id);
-            insertStmt.setString(2, goods_name);
-            insertStmt.setString(3, goods_link);
-            insertStmt.setString(4, img_url);
-            insertStmt.setDouble(5, price);
-            insertStmt.setString(6, platform);
-            int rows = insertStmt.executeUpdate();
-            if (rows == 1) {
+            statement.setString(2, goods_name);
+            statement.setString(3, goods_link);
+            statement.setString(4, img_url);
+            statement.setDouble(5, price);
+            statement.setString(6, platform);
+
+            int rows = statement.executeUpdate();
+
+            if (rows == 1 && rows1 == 1) {
                 commit(conn);
                 return new ApiResult(true, "add goods success");
             } else {
@@ -141,7 +148,48 @@ public class LibraryManagementSystemImpl implements LibraryManagementSystem {
         } catch (SQLException e) {
             e.printStackTrace();
             rollback(conn);
-            return new ApiResult(false, "register rollback fail");
+            return new ApiResult(false, "rollback fail");
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public ApiResult searchgoods(String sku_id) {
+        Connection conn = connector.getConn();
+        try {
+            conn.setAutoCommit(false);
+
+            String sql_select = "SELECT * FROM historygoods WHERE sku_id = ?";
+            PreparedStatement statement = conn.prepareStatement(sql_select);
+            statement.setString(1, sku_id);
+
+            ResultSet resultSet = statement.executeQuery();
+            commit(conn);
+
+            List<Goods> goodsList = new ArrayList<>();
+            while (resultSet.next()) {
+                Goods agoods = new Goods();
+                agoods.setGoodsId(resultSet.getInt("goods_id"));
+                agoods.setSkuId(resultSet.getString("sku_id"));
+                agoods.setGoodsName(resultSet.getString("goods_name"));
+                agoods.setGoodsLink(resultSet.getString("goods_link"));
+                agoods.setImgUrl(resultSet.getString("img_url"));
+                agoods.setPrice(resultSet.getInt("price"));
+                agoods.setPlatform(resultSet.getString("platform"));
+                goodsList.add(agoods);
+            }
+            GoodsResults goodsResults = new GoodsResults(goodsList);
+            return new ApiResult(true, goodsResults);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            rollback(conn);
+            return new ApiResult(false, "searchgoods fail");
         } finally {
             try {
                 conn.setAutoCommit(true);

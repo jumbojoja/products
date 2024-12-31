@@ -1,5 +1,6 @@
 drop table if exists `user`;
 drop table if exists `goods`;
+drop table if exists `historygoods`;
 
 create table `user` (
     `user_id` int not null auto_increment,
@@ -15,7 +16,19 @@ create table `goods` (
     `sku_id` varchar(127) not null,
     `goods_name` varchar(127) not null,
     `goods_link` varchar(512) not null,
-    `img_url` varchar(255) not null,
+    `img_url` varchar(512) not null,
+    `price` decimal(7, 2) not null default 0.00,
+    `platform` varchar(63) not null,
+    primary key (`goods_id`)
+    unique (`sku_id`),
+) engine=innodb charset=utf8mb4;
+
+create table `historygoods` (
+    `goods_id` int not null auto_increment,
+    `sku_id` varchar(127) not null,
+    `goods_name` varchar(127) not null,
+    `goods_link` varchar(512) not null,
+    `img_url` varchar(512) not null,
     `price` decimal(7, 2) not null default 0.00,
     `platform` varchar(63) not null,
     primary key (`goods_id`)

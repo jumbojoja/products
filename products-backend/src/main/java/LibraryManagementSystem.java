@@ -178,6 +178,8 @@ public interface LibraryManagementSystem {
 
     ApiResult addgoods(String sku_id, String goods_name, String goods_link, String img_url, double price, String platform);
 
+    ApiResult searchgoods(String sku_id);
+
     /* ApiResult modifygoods(int goods_id, int sku_id, String goods_name, String goods_link, String img_url, double price, String platform); */
 
     /**

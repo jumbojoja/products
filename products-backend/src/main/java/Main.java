@@ -95,8 +95,10 @@ public class Main {
             server.createContext("/adduser", new AddUserHandler());
             // 登录
             server.createContext("/checkuser", new CheckUserHandler());
-            // 查询
+            // 查询商品
             server.createContext("/search", new SearchGoodsHandler());
+            // 查询历史价格
+            server.createContext("/pricesearch", new SearchPriceHandler());
 
             // 启动服务器
             server.start();
@@ -285,8 +287,6 @@ public class Main {
                         // href
                         String href = link.attr("href");
                         href = "https:" + href;
-                        /* System.out.println("------------------");  
-                        System.out.println(href); */
 
                         // skuID
                         String regex = "skuId=(\\d+)";  // 匹配 skuId= 后的数字部分
@@ -296,21 +296,15 @@ public class Main {
                         if (matcher.find()) {
                             // 获取匹配的 skuId
                             skuId = matcher.group(1);
-                            /* System.out.println("Extracted skuId: " + skuId); */
-                        } else {
-                            /* System.out.println("skuId not found in the URL."); */
                         }
 
                         // img_url
-                        /* Element imgElement = goods.select("[class*='mainPic--Ds3X7I8z']").first(); */
                         Element imgElement = goods.select("img").first();
                         String img_url = imgElement != null ? imgElement.attr("src") : "https://img11.360buyimg.com/n7/jfs/t1/228245/17/27667/67492/66f8b39fF47b5ff80/684a131d6bf6dc91.jpg";
-                        /* System.out.println(img_url); */
 
                         // goods_name
                         Element nameElement = goods.select("[class*='title--qJ7Xg_90']").first().select("span").first();
                         String goods_name = nameElement != null ? nameElement.text() : "未找到";
-                        /* System.out.println(goods_name); */
 
                         // price
                         Element priceIntElement = goods.select("[class*='priceInt']").first();
@@ -326,10 +320,8 @@ public class Main {
                             // 如果解析失败，设置默认价格
                             price = 1024.0;
                         }
-                        /* System.out.println(price); */
 
                         String platform = "淘宝";
-                        /* System.out.println(platform); */
 
                         library.addgoods(skuId, goods_name, href, img_url, price, platform);
                         // 此处并没有用到goods_id
@@ -420,6 +412,95 @@ public class Main {
             
             GoodsResults result = new GoodsResults(Goods_list);
             String response = JSON.toJSONString(result);
+            JSONObject object = JSONObject.parseObject(response);
+            JSONArray jsarr = object.getJSONArray("results");
+            String ret = JSON.toJSONString(jsarr);
+        
+            // 响应头
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+            // 响应状态码200
+            exchange.sendResponseHeaders(200, 0);
+        
+            // 剩下三个和GET一样
+            OutputStream outputStream = exchange.getResponseBody();
+            outputStream.write(ret.getBytes("UTF-8"));
+            outputStream.close();
+        }
+
+        private void handleOptionsRequest(HttpExchange exchange) throws IOException {
+            // 读取OPTION请求体
+            InputStream requestBody = exchange.getRequestBody();
+            // 用这个请求体（输入流）构造个buffered reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+            // 拼字符串的
+            StringBuilder requestBodyBuilder = new StringBuilder();
+            // 用来读的
+            String line;
+            // 没读完，一直读，拼到string builder里
+            while ((line = reader.readLine()) != null) {
+                requestBodyBuilder.append(line);
+            }
+        
+            // 看看读到了啥
+            // 实际处理可能会更复杂点
+            System.out.println("Received OPTION request : " + requestBodyBuilder.toString());
+        
+            // 响应头
+            exchange.getResponseHeaders().set("Content-Type", "text/plain");
+            // 响应状态码200
+            exchange.sendResponseHeaders(204, 0);
+        
+            // 剩下三个和GET一样
+            OutputStream outputStream = exchange.getResponseBody();
+            outputStream.write("successfull".getBytes());
+            outputStream.close();
+        }
+    }
+
+    static class SearchPriceHandler implements HttpHandler {
+        // 关键重写handle方法
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // 允许所有域的请求，cors处理
+            Headers headers = exchange.getResponseHeaders();
+            headers.add("Access-Control-Allow-Origin", "*");
+            headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            headers.add("Access-Control-Allow-Headers", "Content-Type");
+            // 解析请求的方法，看GET还是POST
+            String requestMethod = exchange.getRequestMethod();
+
+            if (requestMethod.equals("POST")) {
+                // 处理POST
+                handlePostRequest(exchange);
+            } else if (requestMethod.equals("OPTIONS")) {
+                // 处理OPTIONS
+                handleOptionsRequest(exchange);
+            } else {
+                // 其他请求返回405 Method Not Allowed
+                exchange.sendResponseHeaders(405, -1);
+            }
+        }
+
+        private void handlePostRequest(HttpExchange exchange) throws IOException {
+            // 读取POST请求体
+            InputStream requestBody = exchange.getRequestBody();
+            // 用这个请求体（输入流）构造个buffered reader
+            /* BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody)); */
+            BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody, "UTF-8"));
+            // 拼字符串的
+            StringBuilder requestBodyBuilder = new StringBuilder();
+            // 用来读的
+            String line;
+            // 没读完，一直读，拼到string builder里
+            while ((line = reader.readLine()) != null) {
+                requestBodyBuilder.append(line);
+            }
+        
+            JSONObject jobj = JSON.parseObject(requestBodyBuilder.toString());
+            String to_search = jobj.getString("sku_id");
+
+            ApiResult apiresult = library.searchgoods(to_search);
+            String response = JSON.toJSONString(apiresult.payload);
             JSONObject object = JSONObject.parseObject(response);
             JSONArray jsarr = object.getJSONArray("results");
             String ret = JSON.toJSONString(jsarr);
